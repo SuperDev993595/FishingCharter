@@ -40,7 +40,7 @@ const router = createRouter({
     {
       path: '/crew/:id',
       name: 'crew-detail',
-      component: () => import('@/views/crew/CrewDetailView.vue')
+      component: () => import('@/views/crew/CrewProfileView.vue')
     },
     {
       path: '/dashboard',
@@ -70,6 +70,24 @@ const router = createRouter({
       path: '/my-applications',
       name: 'my-applications',
       component: () => import('@/views/crew/MyApplicationsView.vue'),
+      meta: { requiresAuth: true, requiresCrew: true }
+    },
+    {
+      path: '/crew-applications',
+      name: 'crew-applications',
+      component: () => import('@/views/crew/CrewApplicationsView.vue'),
+      meta: { requiresAuth: true, requiresOperator: true }
+    },
+    {
+      path: '/post-job',
+      name: 'post-job',
+      component: () => import('@/views/crew/PostJobView.vue'),
+      meta: { requiresAuth: true, requiresOperator: true }
+    },
+    {
+      path: '/create-profile',
+      name: 'create-profile',
+      component: () => import('@/views/crew/CreateProfileView.vue'),
       meta: { requiresAuth: true, requiresCrew: true }
     },
     {
