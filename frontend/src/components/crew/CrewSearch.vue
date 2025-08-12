@@ -60,7 +60,7 @@ const crewMembers = ref([
     id: 2,
     name: 'Sarah Johnson',
     title: 'First Mate',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=500',
+    avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_vWA8vP7T9jXuzbp1bic1h1QGKrqICecgVQ&s',
     location: 'Melbourne, VIC',
     expected_rate: 220
   }
