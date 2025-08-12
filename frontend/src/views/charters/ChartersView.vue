@@ -413,7 +413,7 @@ const viewCharter = (id: number) => {
 
 const clearFilters = () => {
   Object.keys(filters).forEach(key => {
-    filters[key] = ''
+    (filters as any)[key] = ''
   })
   activeQuickFilter.value = ''
   handleSearch()

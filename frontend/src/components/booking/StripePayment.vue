@@ -137,6 +137,21 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
+interface Stripe {
+  elements: (options: { clientSecret: string }) => StripeElements
+  confirmPayment: (options: any) => Promise<{ error?: any; paymentIntent?: any }>
+}
+
+interface StripeElements {
+  create: (type: string, options?: any) => StripeElement
+}
+
+interface StripeElement {
+  mount: (selector: string) => void
+  on: (event: string, handler: (event: any) => void) => void
+  destroy: () => void
+}
+
 const props = defineProps<{
   amount: number
   currency?: string
@@ -150,11 +165,11 @@ const emit = defineEmits<{
 const paymentMethod = ref('card')
 const cardholderName = ref('')
 const error = ref('')
-const stripe = ref(null)
-const elements = ref(null)
-const cardNumber = ref(null)
-const cardExpiry = ref(null)
-const cardCvc = ref(null)
+const stripe = ref<Stripe | null>(null)
+const elements = ref<StripeElements | null>(null)
+const cardNumber = ref<StripeElement | null>(null)
+const cardExpiry = ref<StripeElement | null>(null)
+const cardCvc = ref<StripeElement | null>(null)
 
 const processingFee = computed(() => {
   return Math.round(props.amount * 0.029 + 30) // 2.9% + 30 cents
@@ -168,63 +183,68 @@ const initializeStripe = async () => {
   try {
     // Load Stripe.js
     const { loadStripe } = await import('@stripe/stripe-js')
-    stripe.value = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+    const stripeInstance = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
     
-    if (!stripe.value) {
+    if (!stripeInstance) {
       throw new Error('Failed to load Stripe')
     }
 
+    stripe.value = stripeInstance as Stripe
+
     // Create elements
+    const clientSecret = await getPaymentIntent()
     elements.value = stripe.value.elements({
-      clientSecret: await getPaymentIntent()
+      clientSecret
     })
 
     // Create card elements
-    cardNumber.value = elements.value.create('cardNumber', {
-      style: {
-        base: {
-          fontSize: '16px',
-          color: '#374151',
-          '::placeholder': {
-            color: '#9CA3AF'
+    if (elements.value) {
+      cardNumber.value = elements.value.create('cardNumber', {
+        style: {
+          base: {
+            fontSize: '16px',
+            color: '#374151',
+            '::placeholder': {
+              color: '#9CA3AF'
+            }
           }
         }
-      }
-    })
+      })
 
-    cardExpiry.value = elements.value.create('cardExpiry', {
-      style: {
-        base: {
-          fontSize: '16px',
-          color: '#374151',
-          '::placeholder': {
-            color: '#9CA3AF'
+      cardExpiry.value = elements.value.create('cardExpiry', {
+        style: {
+          base: {
+            fontSize: '16px',
+            color: '#374151',
+            '::placeholder': {
+              color: '#9CA3AF'
+            }
           }
         }
-      }
-    })
+      })
 
-    cardCvc.value = elements.value.create('cardCvc', {
-      style: {
-        base: {
-          fontSize: '16px',
-          color: '#374151',
-          '::placeholder': {
-            color: '#9CA3AF'
+      cardCvc.value = elements.value.create('cardCvc', {
+        style: {
+          base: {
+            fontSize: '16px',
+            color: '#374151',
+            '::placeholder': {
+              color: '#9CA3AF'
+            }
           }
         }
-      }
-    })
+      })
 
-    // Mount elements
-    cardNumber.value.mount('#card-number')
-    cardExpiry.value.mount('#card-expiry')
-    cardCvc.value.mount('#card-cvc')
+      // Mount elements
+      if (cardNumber.value) cardNumber.value.mount('#card-number')
+      if (cardExpiry.value) cardExpiry.value.mount('#card-expiry')
+      if (cardCvc.value) cardCvc.value.mount('#card-cvc')
 
-    // Handle validation errors
-    cardNumber.value.on('change', handleCardChange)
-    cardExpiry.value.on('change', handleCardChange)
-    cardCvc.value.on('change', handleCardChange)
+      // Handle validation errors
+      if (cardNumber.value) cardNumber.value.on('change', handleCardChange)
+      if (cardExpiry.value) cardExpiry.value.on('change', handleCardChange)
+      if (cardCvc.value) cardCvc.value.on('change', handleCardChange)
+    }
 
   } catch (err) {
     console.error('Stripe initialization error:', err)
@@ -232,7 +252,7 @@ const initializeStripe = async () => {
   }
 }
 
-const getPaymentIntent = async () => {
+const getPaymentIntent = async (): Promise<string> => {
   try {
     // TODO: Create payment intent on backend
     const response = await fetch('/api/payments/create-intent', {
@@ -254,7 +274,7 @@ const getPaymentIntent = async () => {
   }
 }
 
-const handleCardChange = (event) => {
+const handleCardChange = (event: any) => {
   if (event.error) {
     error.value = event.error.message
   } else {

@@ -256,20 +256,51 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
+interface Step {
+  id: string
+  title: string
+}
+
+interface Charter {
+  id: number
+  name: string
+  capacity: number
+  duration_hours: number
+  price_per_person: number
+}
+
+interface Addon {
+  id: number
+  name: string
+  description: string
+  price: number
+}
+
+interface BookingData {
+  trip_date: string
+  departure_time: string
+  number_of_people: string
+  guest_name: string
+  guest_email: string
+  guest_phone: string
+  special_requests: string
+  payment_type: 'full' | 'deposit'
+}
+
 const router = useRouter()
 
 const currentStep = ref(0)
 const processing = ref(false)
-const selectedAddons = ref([])
+const selectedAddons = ref<number[]>([])
 
-const steps = [
+const steps: Step[] = [
   { id: 'details', title: 'Trip Details' },
   { id: 'guests', title: 'Guest Info' },
   { id: 'payment', title: 'Payment' },
   { id: 'confirmation', title: 'Confirmation' }
 ]
 
-const charter = ref({
+const charter = ref<Charter>({
   id: 1,
   name: 'Great Barrier Reef Adventure',
   capacity: 6,
@@ -277,13 +308,13 @@ const charter = ref({
   price_per_person: 150
 })
 
-const availableAddons = ref([
+const availableAddons = ref<Addon[]>([
   { id: 1, name: 'Catering', description: 'Lunch and refreshments included', price: 25 },
   { id: 2, name: 'Fishing Equipment', description: 'Premium fishing gear rental', price: 15 },
   { id: 3, name: 'Photography Package', description: 'Professional photos of your catch', price: 30 }
 ])
 
-const bookingData = reactive({
+const bookingData = reactive<BookingData>({
   trip_date: '',
   departure_time: '',
   number_of_people: '',
@@ -295,7 +326,7 @@ const bookingData = reactive({
 })
 
 const basePrice = computed(() => {
-  return charter.value.price_per_person * parseInt(bookingData.number_of_people || 0)
+  return charter.value.price_per_person * parseInt(bookingData.number_of_people || '0')
 })
 
 const selectedAddonDetails = computed(() => {
@@ -303,7 +334,7 @@ const selectedAddonDetails = computed(() => {
     .filter(addon => selectedAddons.value.includes(addon.id))
     .map(addon => ({
       ...addon,
-      totalPrice: addon.price * parseInt(bookingData.number_of_people || 0)
+      totalPrice: addon.price * parseInt(bookingData.number_of_people || '0')
     }))
 })
 

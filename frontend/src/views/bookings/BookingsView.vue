@@ -215,14 +215,39 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
+interface Tab {
+  id: string
+  name: string
+}
+
+interface Stats {
+  total: number
+  confirmed: number
+  pending: number
+  cancelled: number
+}
+
+interface Booking {
+  id: number
+  charter_name: string
+  charter_location: string
+  trip_date: string
+  departure_time: string
+  number_of_people: number
+  duration_hours: number
+  total_price: number
+  status: 'confirmed' | 'pending' | 'completed' | 'cancelled'
+  special_requests: string
+}
+
 const router = useRouter()
 
 const activeTab = ref('all')
 const showCancel = ref(false)
 const cancellationReason = ref('')
-const selectedBooking = ref(null)
+const selectedBooking = ref<Booking | null>(null)
 
-const tabs = [
+const tabs: Tab[] = [
   { id: 'all', name: 'All Bookings' },
   { id: 'confirmed', name: 'Confirmed' },
   { id: 'pending', name: 'Pending' },
@@ -230,14 +255,14 @@ const tabs = [
   { id: 'cancelled', name: 'Cancelled' }
 ]
 
-const stats = ref({
+const stats = ref<Stats>({
   total: 0,
   confirmed: 0,
   pending: 0,
   cancelled: 0
 })
 
-const bookings = ref([
+const bookings = ref<Booking[]>([
   {
     id: 1,
     charter_name: 'Great Barrier Reef Adventure',
@@ -283,7 +308,7 @@ const filteredBookings = computed(() => {
   return bookings.value.filter(booking => booking.status === activeTab.value)
 })
 
-const getStatusClasses = (status) => {
+const getStatusClasses = (status: string): string => {
   switch (status) {
     case 'confirmed':
       return 'bg-green-100 text-green-800'
@@ -298,7 +323,7 @@ const getStatusClasses = (status) => {
   }
 }
 
-const formatDate = (date) => {
+const formatDate = (date: string): string => {
   return new Date(date).toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -307,14 +332,14 @@ const formatDate = (date) => {
   })
 }
 
-const canCancel = (tripDate) => {
+const canCancel = (tripDate: string): boolean => {
   const trip = new Date(tripDate)
   const now = new Date()
   const hoursDiff = (trip.getTime() - now.getTime()) / (1000 * 60 * 60)
   return hoursDiff > 24 // Can cancel if more than 24 hours before trip
 }
 
-const getEmptyStateMessage = () => {
+const getEmptyStateMessage = (): string => {
   switch (activeTab.value) {
     case 'confirmed':
       return "You don't have any confirmed bookings yet."
@@ -329,16 +354,16 @@ const getEmptyStateMessage = () => {
   }
 }
 
-const viewBookingDetails = (bookingId) => {
+const viewBookingDetails = (bookingId: number): void => {
   router.push(`/bookings/${bookingId}`)
 }
 
-const showCancelModal = (booking) => {
+const showCancelModal = (booking: Booking): void => {
   selectedBooking.value = booking
   showCancel.value = true
 }
 
-const confirmCancel = async () => {
+const confirmCancel = async (): Promise<void> => {
   if (!selectedBooking.value) return
 
   try {
@@ -346,7 +371,7 @@ const confirmCancel = async () => {
     console.log('Cancelling booking:', selectedBooking.value.id, 'Reason:', cancellationReason.value)
     
     // Update local state
-    const booking = bookings.value.find(b => b.id === selectedBooking.value.id)
+    const booking = bookings.value.find(b => b.id === selectedBooking.value?.id)
     if (booking) {
       booking.status = 'cancelled'
     }
@@ -362,16 +387,16 @@ const confirmCancel = async () => {
   }
 }
 
-const writeReview = (booking) => {
+const writeReview = (booking: Booking): void => {
   router.push(`/reviews/new?booking=${booking.id}`)
 }
 
-const downloadTicket = (bookingId) => {
+const downloadTicket = (bookingId: number): void => {
   // TODO: Generate and download ticket PDF
   console.log('Downloading ticket for booking:', bookingId)
 }
 
-const updateStats = () => {
+const updateStats = (): void => {
   stats.value = {
     total: bookings.value.length,
     confirmed: bookings.value.filter(b => b.status === 'confirmed').length,

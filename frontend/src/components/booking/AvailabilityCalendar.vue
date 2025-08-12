@@ -90,6 +90,21 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 
+interface CalendarDay {
+  date: string
+  dayNumber: number
+  isCurrentMonth: boolean
+  isPast: boolean
+  isToday: boolean
+  availability: 'available' | 'limited' | 'unavailable' | null
+  price: number | null
+}
+
+interface Charter {
+  id: number
+  price_per_person: number
+}
+
 const props = defineProps<{
   charterId: number
   selectedDate?: string
@@ -100,11 +115,11 @@ const emit = defineEmits<{
 }>()
 
 const currentDate = ref(new Date())
-const selectedDate = ref(null)
+const selectedDate = ref<CalendarDay | null>(null)
 
 const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-const charter = ref({
+const charter = ref<Charter>({
   id: 1,
   price_per_person: 150
 })
@@ -126,7 +141,7 @@ const formatSelectedDate = computed(() => {
   })
 })
 
-const calendarDays = computed(() => {
+const calendarDays = computed((): CalendarDay[] => {
   const year = currentDate.value.getFullYear()
   const month = currentDate.value.getMonth()
   const firstDay = new Date(year, month, 1)
@@ -134,7 +149,7 @@ const calendarDays = computed(() => {
   const startDate = new Date(firstDay)
   startDate.setDate(startDate.getDate() - firstDay.getDay())
 
-  const days = []
+  const days: CalendarDay[] = []
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -148,8 +163,8 @@ const calendarDays = computed(() => {
     const isToday = date.getTime() === today.getTime()
 
     // Mock availability data - in real app, this would come from API
-    let availability = null
-    let price = null
+    let availability: 'available' | 'limited' | 'unavailable' | null = null
+    let price: number | null = null
 
     if (isCurrentMonth && !isPast) {
       const random = Math.random()
@@ -178,8 +193,8 @@ const calendarDays = computed(() => {
   return days
 })
 
-const getDayClasses = (day) => {
-  const classes = ['min-h-[60px] flex flex-col justify-center']
+const getDayClasses = (day: CalendarDay): string => {
+  const classes: string[] = ['min-h-[60px] flex flex-col justify-center']
   
   if (!day.isCurrentMonth) {
     classes.push('bg-gray-50 text-gray-400')
@@ -204,7 +219,7 @@ const getDayClasses = (day) => {
   return classes.join(' ')
 }
 
-const getDayTextClasses = (day) => {
+const getDayTextClasses = (day: CalendarDay): string => {
   if (day.isToday) {
     return 'font-bold text-primary-700'
   }
@@ -214,7 +229,7 @@ const getDayTextClasses = (day) => {
   return 'text-gray-900'
 }
 
-const getAvailabilityColor = (availability) => {
+const getAvailabilityColor = (availability: 'available' | 'limited' | 'unavailable' | null): string => {
   switch (availability) {
     case 'available': return 'text-green-600'
     case 'limited': return 'text-yellow-600'
@@ -223,7 +238,7 @@ const getAvailabilityColor = (availability) => {
   }
 }
 
-const getAvailabilityText = (availability) => {
+const getAvailabilityText = (availability: 'available' | 'limited' | 'unavailable' | null): string => {
   switch (availability) {
     case 'available': return 'Available'
     case 'limited': return 'Limited Availability'
@@ -232,15 +247,15 @@ const getAvailabilityText = (availability) => {
   }
 }
 
-const previousMonth = () => {
+const previousMonth = (): void => {
   currentDate.value = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() - 1, 1)
 }
 
-const nextMonth = () => {
+const nextMonth = (): void => {
   currentDate.value = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() + 1, 1)
 }
 
-const selectDate = (day) => {
+const selectDate = (day: CalendarDay): void => {
   if (!day.isCurrentMonth || day.isPast || day.availability === 'unavailable') {
     return
   }
